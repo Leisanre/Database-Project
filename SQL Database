@@ -1,0 +1,35 @@
+-- Use the BookSale database
+USE BookSale;
+
+-- Drop the Users table if it already exists
+DROP TABLE IF EXISTS Users;
+
+-- Create the Users table with essential and optional columns
+CREATE TABLE Users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,          -- Unique user ID
+    username VARCHAR(50) NOT NULL UNIQUE,            -- Unique username for login
+    password_hash VARCHAR(255) NOT NULL,             -- Hashed password for security
+    email VARCHAR(100) NOT NULL UNIQUE,              -- Unique email address for communication
+    first_name VARCHAR(50) NOT NULL,                 -- User's first name
+    last_name VARCHAR(50) NOT NULL,                  -- User's last name
+    phone_number VARCHAR(15) NULL,                   -- Optional phone number for user communication
+    address VARCHAR(255) NULL,                        -- Optional address for delivery
+    date_of_birth DATE NULL,                          -- Optional date of birth for insights
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Timestamp for when the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Timestamp for when the record was last updated
+);
+
+-- Insert an example user into the Users table
+INSERT INTO Users (username, password_hash, email, first_name, last_name, phone_number, address, date_of_birth)
+VALUES 
+('john_doe', 
+ '$2y$10$eImiTXuWVf3MR0sS4M5v1e4kT1D/E02d1tshzD1xA0RZxVZ8FbG8y', -- Example hashed password
+ 'john@example.com', 
+ 'John', 
+ 'Doe', 
+ '123-456-7890', 
+ '123 Book St, Booktown, PH', 
+ '1990-01-01'); -- User's date of birth
+
+-- Query to verify the inserted data
+SELECT * FROM Users; 
