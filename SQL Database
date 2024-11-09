@@ -1,6 +1,8 @@
 -- Use the BookSale database
 USE BookSale;
 
+ALTER TABLE OrderItems DROP FOREIGN KEY orderitems_ibfk_1;
+
 -- Drop tables if they already exist to start fresh
 DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS OrderItems;
@@ -33,8 +35,6 @@ CREATE TABLE Books (
     genre VARCHAR(50),                               -- Genre or category of the book
     price DECIMAL(10, 2) NOT NULL,                   -- Price of the book
     stock_quantity INT NOT NULL,                     -- Stock quantity of the book
-    description TEXT,                                -- Description of the book
-    cover_image_url VARCHAR(255),                    -- URL to cover image
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Timestamp for when the record was created
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Timestamp for when the record was last updated
 );
@@ -42,26 +42,28 @@ CREATE TABLE Books (
 -- Create the Orders table to manage user orders
 CREATE TABLE Orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,         -- Unique order ID
-    user_id INT,                                     -- uid
+    user_id INT,                                     -- Links to user who placed the order
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Date when the order was placed
     total_price DECIMAL(10, 2) NOT NULL,             -- Total price of the order
     order_status VARCHAR(50) DEFAULT 'Pending',      -- Status of the order (e.g., Pending, Shipped, Delivered)
     shipping_address VARCHAR(255),                   -- Shipping address for the order
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)  -- Foreign key constraint
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)  -- Foreign key constraint linking to Users table
 );
 
 -- Create the OrderItems table to link Orders with Books (many-to-many relationship)
 CREATE TABLE OrderItems (
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,    -- Unique order item ID
-    order_id INT,                                    -- order id reference
-    book_id INT,                                     -- books id reference
+    order_id INT,                                    -- Links to the specific order
+    book_id INT,                                     -- Links to the specific book in the order
     quantity INT NOT NULL,                           -- Quantity of the book ordered
     price DECIMAL(10, 2) NOT NULL,                   -- Price of the book at the time of order
-    FOREIGN KEY (order_id) REFERENCES Orders(order_id), -- orderid
-    FOREIGN KEY (book_id) REFERENCES Books(book_id)  -- bookid
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Timestamp for when the order item was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Timestamp for when the order item was last updated
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id), -- Foreign key linking to Orders table
+    FOREIGN KEY (book_id) REFERENCES Books(book_id)  -- Foreign key linking to Books table
 );
 
--- Insert an example user into the Users table
+-- Insert example data into the Users table
 INSERT INTO Users (username, password_hash, email, first_name, last_name, phone_number, address, date_of_birth)
 VALUES 
 ('john_doe', 
@@ -74,9 +76,9 @@ VALUES
  '1990-01-01');
 
 -- Insert an example book into the Books table
-INSERT INTO Books (title, author, isbn, publisher, published_date, genre, price, stock_quantity, description, cover_image_url)
+INSERT INTO Books (title, author, isbn, publisher, published_date, genre, price, stock_quantity)
 VALUES 
-('The Great Book', 'Jane Doe', '978-3-16-148410-0', 'Book Publishers Inc.', '2020-05-01', 'Fiction', 19.99, 100, 'A fascinating fiction book.', 'http://example.com/cover.jpg');
+('The Great Book', 'Jane Doe', '978-3-16-148410-0', 'Book Publishers Inc.', '2020-05-01', 'Fiction', 19.99, 100);
 
 -- Insert an example order into the Orders table
 INSERT INTO Orders (user_id, total_price, order_status, shipping_address)
@@ -88,8 +90,64 @@ INSERT INTO OrderItems (order_id, book_id, quantity, price)
 VALUES 
 (1, 1, 1, 19.99);
 
--- Query to verify the inserted data in Users, Books, Orders, and OrderItems
-SELECT * FROM Users;
-SELECT * FROM Books;
-SELECT * FROM Orders;
-SELECT * FROM OrderItems;
+-- Query to view Users table with 12-hour time format for created_at and updated_at
+SELECT 
+    user_id,
+    username,
+    email,
+    first_name,
+    last_name,
+    phone_number,
+    address,
+    date_of_birth,
+    DATE_FORMAT(created_at, '%Y-%m-%d %h:%i %p') AS created_at,
+    DATE_FORMAT(updated_at, '%Y-%m-%d %h:%i %p') AS updated_at
+FROM Users
+LIMIT 10;
+
+-- Query to view Books table with 12-hour time format for created_at and updated_at
+SELECT 
+    book_id,
+    title,
+    author,
+    isbn,
+    publisher,
+    published_date,
+    genre,
+    price,
+    stock_quantity,
+    DATE_FORMAT(created_at, '%Y-%m-%d %h:%i %p') AS created_at,
+    DATE_FORMAT(updated_at, '%Y-%m-%d %h:%i %p') AS updated_at
+FROM Books
+LIMIT 10;
+
+-- Query to view Orders table, including user info and 12-hour time format for order_date
+SELECT 
+    o.order_id,
+    o.user_id,
+    u.username,
+    u.first_name,
+    u.last_name,
+    o.order_date,
+    DATE_FORMAT(o.order_date, '%Y-%m-%d %r') AS order_date,  -- Corrected 12-hour format for order_date
+    o.total_price,
+    o.order_status,
+    o.shipping_address
+FROM Orders o
+JOIN Users u ON o.user_id = u.user_id
+LIMIT 10;
+
+-- Query to view OrderItems table, including book info
+SELECT 
+    oi.order_item_id,
+    oi.order_id,
+    oi.book_id,
+    b.title AS book_title,
+    b.author AS book_author,
+    oi.quantity,
+    oi.price,
+    DATE_FORMAT(oi.created_at, '%Y-%m-%d %h:%i %p') AS created_at,
+    DATE_FORMAT(oi.updated_at, '%Y-%m-%d %h:%i %p') AS updated_at
+FROM OrderItems oi
+JOIN Books b ON oi.book_id = b.book_id
+LIMIT 10;
