@@ -1,7 +1,10 @@
 -- Use the BookSale database
 USE BookSale;
 
--- Drop the Users table if it already exists
+-- Drop tables if they already exist to start fresh
+DROP TABLE IF EXISTS Orders;
+DROP TABLE IF EXISTS OrderItems;
+DROP TABLE IF EXISTS Books;
 DROP TABLE IF EXISTS Users;
 
 -- Create the Users table with essential and optional columns
@@ -13,23 +16,80 @@ CREATE TABLE Users (
     first_name VARCHAR(50) NOT NULL,                 -- User's first name
     last_name VARCHAR(50) NOT NULL,                  -- User's last name
     phone_number VARCHAR(15) NULL,                   -- Optional phone number for user communication
-    address VARCHAR(255) NULL,                        -- Optional address for delivery
-    date_of_birth DATE NULL,                          -- Optional date of birth for insights
+    address VARCHAR(255) NULL,                       -- Optional address for delivery
+    date_of_birth DATE NULL,                         -- Optional date of birth for insights
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Timestamp for when the record was created
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Timestamp for when the record was last updated
+);
+
+-- Create the Books table for storing book information
+CREATE TABLE Books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,          -- Unique book ID
+    title VARCHAR(255) NOT NULL,                     -- Book title
+    author VARCHAR(100) NOT NULL,                    -- Author of the book
+    isbn VARCHAR(20) UNIQUE,                         -- International Standard Book Number
+    publisher VARCHAR(100),                          -- Book publisher
+    published_date DATE,                             -- Publication date of the book
+    genre VARCHAR(50),                               -- Genre or category of the book
+    price DECIMAL(10, 2) NOT NULL,                   -- Price of the book
+    stock_quantity INT NOT NULL,                     -- Stock quantity of the book
+    description TEXT,                                -- Description of the book
+    cover_image_url VARCHAR(255),                    -- URL to cover image
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Timestamp for when the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Timestamp for when the record was last updated
+);
+
+-- Create the Orders table to manage user orders
+CREATE TABLE Orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,         -- Unique order ID
+    user_id INT,                                     -- uid
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Date when the order was placed
+    total_price DECIMAL(10, 2) NOT NULL,             -- Total price of the order
+    order_status VARCHAR(50) DEFAULT 'Pending',      -- Status of the order (e.g., Pending, Shipped, Delivered)
+    shipping_address VARCHAR(255),                   -- Shipping address for the order
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)  -- Foreign key constraint
+);
+
+-- Create the OrderItems table to link Orders with Books (many-to-many relationship)
+CREATE TABLE OrderItems (
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,    -- Unique order item ID
+    order_id INT,                                    -- order id reference
+    book_id INT,                                     -- books id reference
+    quantity INT NOT NULL,                           -- Quantity of the book ordered
+    price DECIMAL(10, 2) NOT NULL,                   -- Price of the book at the time of order
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id), -- orderid
+    FOREIGN KEY (book_id) REFERENCES Books(book_id)  -- bookid
 );
 
 -- Insert an example user into the Users table
 INSERT INTO Users (username, password_hash, email, first_name, last_name, phone_number, address, date_of_birth)
 VALUES 
 ('john_doe', 
- '$2y$10$eImiTXuWVf3MR0sS4M5v1e4kT1D/E02d1tshzD1xA0RZxVZ8FbG8y', -- Example hashed password
+ '123',
  'john@example.com', 
  'John', 
  'Doe', 
  '123-456-7890', 
  '123 Book St, Booktown, PH', 
- '1990-01-01'); -- User's date of birth
+ '1990-01-01');
 
--- Query to verify the inserted data
-SELECT * FROM Users; 
+-- Insert an example book into the Books table
+INSERT INTO Books (title, author, isbn, publisher, published_date, genre, price, stock_quantity, description, cover_image_url)
+VALUES 
+('The Great Book', 'Jane Doe', '978-3-16-148410-0', 'Book Publishers Inc.', '2020-05-01', 'Fiction', 19.99, 100, 'A fascinating fiction book.', 'http://example.com/cover.jpg');
+
+-- Insert an example order into the Orders table
+INSERT INTO Orders (user_id, total_price, order_status, shipping_address)
+VALUES 
+(1, 19.99, 'Pending', '123 Book St, Booktown, PH');
+
+-- Insert an example order item into the OrderItems table
+INSERT INTO OrderItems (order_id, book_id, quantity, price)
+VALUES 
+(1, 1, 1, 19.99);
+
+-- Query to verify the inserted data in Users, Books, Orders, and OrderItems
+SELECT * FROM Users;
+SELECT * FROM Books;
+SELECT * FROM Orders;
+SELECT * FROM OrderItems;
